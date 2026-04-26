@@ -1,0 +1,6 @@
+streamlit
+requests
+duckdb
+pandas
+chromadb>=0.4.22
+openai>=1.0.0
