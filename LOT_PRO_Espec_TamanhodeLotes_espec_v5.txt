@@ -1,0 +1,871 @@
+﻿Relatório EOQ
+	
+
+Identificação da Demanda 
+	Nome do Processo Envolvido na Demanda
+	Cálculo de lotes de produção e compra com base no modelo EOQ, incluindo alertas e indicador de aderência.
+	Áreas Envolvidas
+	GEST
+	
+
+1. Problema a Solucionar
+	
+
+Atualmente há uma ferramenta que faz o cálculo do tamanho de lote considerando Giro Meta definido, para itens sem vencimento não há tamanho de lote calculado e não são considerados o trade off de custos.
+
+
+	
+
+2. Detalhamento do Problema
+	
+
+1. Descrição do relatório
+
+
+1. Listar os lotes dos itens ativos (status 5, 6, 7, com horizonte de planejamento diferente de 999 e tipo de suprimento diferente de “P”);
+2. Utilizar apenas centros produtivos (BA01 e BB01);
+3. Determinar o tamanho lote irrestrito e restrito para cada item;
+4. Ser flexível com o horizonte da demanda
+5. Calcular ganhos comparando diferentes tipos de lotes
+6. Gerar alertas
+7. Indicador de aderência entre o lote cadastrado e o lote praticado
+
+
+2. Informações fora do sistema (Transação Z)
+
+
+Algumas informações que estão fora do sistema ou dados que precisam ser refinados serão inseridos manualmente ou carregados via upload de arquivo em uma transação Z a parte. Todas essas informações serão armazenadas em uma tabela Z para serem acessíveis tanto para o Relatório EOQ, quanto a heurística de Silver Meal e o Cockpit de Compras, são essas informações:
+
+
+Prazo de Comercialização [dias]:
+Campo aberto para inserir o prazo de comercialização em dias.
+
+
+Custo de Armazenagem CDs:
+Campo aberto para inserir o custo de Armazenagem dos CDs [$/qtd posição palete].
+
+
+Custo de Armazenagem BA01:
+Campo aberto para inserir o custo de Armazenagem em BA01 [$/qtd posição palete].
+
+
+Custo de Armazenagem BB01:
+Campo aberto para inserir o custo de Armazenagem em BB01 [$/qtd posição palete].
+
+
+Taxa de Oportunidade:
+Campo aberto para inserir a taxa de CDI [ano]
+
+
+Taxa de Seguro:
+Campo aberto para inserir a taxa de seguro [mês]
+
+
+Custo Administrativo da Área de Compras:
+Campo aberto para inserir o custo da área [$/ordem]
+
+
+Custo Administrativo da Área de Produção:
+Campo aberto para inserir o custo da área [$/ordem]
+
+
+Custo UEP:
+Histórico realizado da UEP dos últimos 12 meses por fábrica
+Campo aberto que permita múltiplas entradas por Unidade gerencial x Fábrica:
+Unidade gerencial
+	Fábrica
+	Valor UEP média (R$)
+	BB01
+	Hidro
+	0,20
+	
+
+Custo de Qualidade:
+Campo Aberto que permita múltiplas entradas por Unidade gerencial x Tipo de Material
+Unidade gerencial
+	Tipo de Material
+	Custo Qualidade (R$)
+	BB01
+	FERT
+	125,00
+	
+
+Lote Mínimo de Compras
+Campo Aberto que permita múltiplas entradas no formato
+Unidade gerencial
+	Produto
+	Lote Mínimo de Compras
+	BB01
+	209180
+	15000
+	
+
+
+
+3. Informações no Sistema:
+
+
+Por meio da chave Material/ Centro as seguintes informações devem ser levantadas e apresentadas:
+
+
+Unidade gerencial
+Produto
+Denominação do produto
+Unidade de negócio
+UMB
+Stat.mat.todos cent.
+Tipo de Material
+Tipo de Suprimento
+Planejador
+Tempo procmto.EM
+PEP
+Lote de Arredondamento
+Lote Mínimo
+Cob.segurança
+Estoque de segurança
+Extrair os Dados Mestres da query: SQ01 - PRODUTO_UG_CIF (APO)
+
+
+Versão de Produção
+Extrair dados da tabela MKAL do ECC
+
+
+Categoria, Subcategoria
+Dados de gestão de mercado: ZMM043
+
+
+Estoque Inicial:
+Extrair dados da MARD do ECC
+
+
+Shelf Life
+Extrair valor prazo de vencimento da ZMM110 (Estrutura ZMME069)
+
+
+Histórico de Ordens de Compras
+Utilizar tabela EEKO do ECC
+
+
+Histórico de Ordens de Produção
+Utilizar tabela AFPO do ECC
+
+
+SKU Granel
+Para “Produção” por meio da chave SKU x Centro buscar na tabela MAST o SKU do granel, para “Compras” deixar vazio
+
+
+Tempo de Máquina para Granel
+Para “Produção” por meio da chave SKU Granel x Centro buscar na tabela MKAL do ECC os tempo de preparação (TpPrep) e tempo de máquina (TpMaquina) de cada SKU - Filtrar apenas por ZB06
+
+
+Taxas de Up’s dos Equipamentos
+Extrair a informação da TAX SETUP e TAX MÁQ. Por meio da tabela /SAPAPO/RES_HEAD no APO
+
+
+4. Tela de Seleção do Relatório
+
+
+Horizonte da Demanda:
+Campo aberto presente na entrada do relatório para inserir o horizonte da demanda informando a data início e a data fim.
+
+
+Alerta Vermelho:
+Campo aberto presente na entrada do relatório para inserir o parâmetro em % para o farol vermelho
+
+
+Alerta Amarelo:
+Campo aberto presente na entrada do relatório para inserir o parâmetro em % para o farol amarelo
+
+
+Limite desvio Praticado x Realizado
+Campo aberto presente na entrada do relatório para inserir o parâmetro em % representando o máximo de desvio tolerável entre o Lote Praticado e o Lote Realizado
+
+
+5. Campos Calculados:
+
+
+Os campos necessários no relatório e as fontes de informação estão descritas abaixo:
+
+
+Produção/Compras
+Utilizar Tipo de Suprimento na Tabela MATLOC do APO. Campo Calculado: Se Tipo de Suprimento é “E” ou “X” = “Produção”, se “F”= “Compras”
+Tipo de Suprimento: Dados Mestres: SQ01 - PRODUTO_UG_CIF (APO)
+
+
+Versão de Produção
+Para “Produção” utilizar versão de produção presente na tabela MKAL do ECC, para “Compras” inserir N/A
+
+
+Lote Cadastrado
+Máximo valor entre o Lote de Arredondamento e o Lote Mínimo
+
+
+Lote Praticado
+Para “Compras”: Média das quantidades no período de um ano, agregadas pela data de recebimento. Utilizar tabela EEKO do ECC
+Para “Produção”: Média das quantidades no período de um ano, agregadas pelas ordens de produção (desconsiderando terceiros) extrair a informação por meio da transação AFPO do ECC
+
+
+Demanda Média:
+Por meio da chave Material/ Centro trazer a média mensal agrupando pelo mês da data (DtDisp/Nec) para o período definido no Horizonte da Demanda
+Se Tipo de Material = FERT: buscar a informação da /SAPAPO/RRP4, para os demais utilizar Farol de Estoques - V300
+
+
+ES
+Cob.segurança/30*Demanda Média + Estoque de segurança
+
+
+Lote Mínimo de Produção
+Capacidade Mínima Maquinário/(Quantidade do Granel/Quantidade de PA)
+Capacidade Mínima Maquinário = Por meio da chave SKU Granel x Centro trazer a informação da tabela /SAPAPO/RES_HEAD no APO
+
+
+Lote Máximo de Produção
+Capacidade Máxima Maquinário/(Quantidade do Granel/ Quantidade de PA)
+Capacidade Máxima Maquinário = Por meio da chave SKU(granel) x Centro trazer a informação da tabela /SAPAPO/RES_HEAD no APO. 
+
+
+* Cálculo dos Custos:
+
+
+Custo do item:
+Extrair o custo de estoque do mês mais atualizado por meio da transação ZC059 ou S_P99_41000062
+Para Produção é necessário extrair o custo unitário do setup e custo unitário de transformação:
+Custo do item: Custo do item – custo unitário do setup - custo unitário de transformação.
+O cálculo dos custos de setup e transformação unitários, serão explicados mais à frente. Para itens que não apresentam qualquer custo inserir a mensagem “Sem Custo”
+
+
+Custo de Carregamento:
+Custo de Carregamento: Custo de Armazenagem + Custo de Oportunidade + Custo de Seguro
+
+
+Custo de Armazenagem: Se Tipo de Material = FERT e CD Destino <> de BA02: Custo de Armazenagem CDs/Qtd máxima de peça palete, se Location = BA01: Custo de Armazenagem BA01/Qtd máxima de peça palete, senão Location = BB01: Custo de Armazenagem BB01/Qtd máxima de peça palete.
+Os Custos de Armazenagem estão na Tabela Z
+CD Destino: Para Tipo de Material = FERT e Produto contém 5 caracteres e inicia com 6 = BA02, senão inserir texto “Ambos CD’s”. Para os demais Tipo de Material deixar o campo vazio.
+Qtd máxima de peça palete = Se Tipo de Material = HAWA ou FERT utilizar a tabela MARM; para demais os demais itens utilizar o maior valor encontrado do cálculo (n volumes*qt por volume)/n de palete presente tabela ZMM038. Senão utilizar o valor máximo presente na LQUA
+
+
+Custo de Oportunidade: TaxaOportunidadeAjustada*Custo do item
+Obs: A taxa de oportunidade parametrizada será por ano sendo assim é necessário usar a seguinte forma para parametrizar por mês:
+TaxaOportunidadeAjustada= (1+Taxa de Oportunidade)12 - 1
+
+
+Custo de Seguro: Taxa de Seguro* Custo do item
+
+
+Custo de Ordem:
+Custo de Ordem: Custo Administrativo da Área + Custo de Setup + Custo de Transformação + Custo de Qualidade
+
+
+Custo Administrativo da Área: Para “Compras” = Custo Administrativo da Área de Compras, para “Produção”: Custo Administrativo da Área de Produção, ambos presentes na Tabela Z
+
+
+Custo de Setup: UEPsetup *Custo UEP 
+UEPsetup = Por meio da chave: SKU x Centro x Roteiro selecionar UP-SET presente na transação CK11N
+Por meio do SKU determinar qual a Fábrica (Cremes, Hidro e Maquiagem) para relacionar a Fábrica com a média do Custo da UEP presente na Tabela Z
+Custo unitário setup: Custo de Setup/ Média do lote praticado dos últimos 12 meses
+
+
+Custo de Transformação: UEP Transformação * Custo da UEP
+UEP Transformação: TpPrep * TAX SETUP + TpMaquina * TAX MÁQ
+Utilizar a chave Texto breve da operação para determinar a taxa correspondente de cada SKU x Centro
+Custo unitário transformação: Custo de Transformação/ Média do lote praticado dos últimos 12 meses
+
+
+Custo de Qualidade: Por meio da chave Tipo de Material x Centro determinar o Custo de Qualidade presente na Tabela Z para cada item
+
+
+* Cálculo do Lote EOQ:
+
+
+CRT Lote Cadastrado:
+(Custo de Carregamento*Lote Cadastrado)/2 + Custo de Ordem*(Demanda Média/Lote Cadastrado)
+
+
+EOQ (Q*):
+Raiz((2* Demanda Média *Custo de Ordem)/Custo de Carregamento)
+
+
+CRT EOQ (Q*):
+(Custo de Carregamento* EOQ (Q*))/2 + Custo de Ordem*(Demanda Média/ EOQ (Q*))
+
+
+Período de Revisão (T):
+EOQ (Q*)/Demanda Média
+
+
+Delta CRT:
+CRT Lote Cadastrado - CRT EOQ (Q*)
+
+
+
+
+* Cálculo do Lote Restrito:
+
+
+Lote Shelf Life:
+Produção: Lote Shelf Life: ((Shelf Life - Prazo de Comercialização – Cob.Segurança - Tempo procmto.EM)/30* Demanda Média) - Estoque de Segurança
+Compras: ((Shelf Life*0,5 - Cob.segurança - Tempo procmto.EM)/30* Demanda Média) - Estoque de Segurança
+
+
+Lote Restrito:
+
+
+Lote Restrito: Se Demanda média = 0, Lote Preliminar = 0; se Demanda média ≠ 0, Shelf Life = 0 ou vazio ou Lote Preliminar < Lote Shelf Life: Lote Preliminar, senão Lote Shelf Life
+
+
+Lote Preliminar:
+* Se Lote Mínimo de Compras = Lote Mínimo de Produção = Lote Máximo de Produção = 0, selecionar EOQ (Q*)
+* Para Compras: Se EOQ (Q*) ≥ Lote Mínimo de Compras, selecionar EOQ (Q*), senão Lote Mínimo de Compras
+* Para Produção: Se Lote Mínimo de Produção ≤ EOQ (Q*) ≤ Lote Máximo de Produção, selecionar EOQ (Q*), se EOQ (Q*)> Lote Máximo de Produção, selecionar Lote Máximo de Produção, senão Lote Mínimo de Produção
+
+
+
+
+6. Cálculo dos Ganhos:
+
+
+Comparação dos lotes cadastrados e praticados com:
+* EOQ
+* EOQ Restrito
+
+
+
+
+Para o cálculo dos ganhos, primeiramente realizou-se um “MRP” para todo o Horizonte da Demanda escolhido com os diferentes tamanhos de lotes e dessa forma foram estimados o Estoque Planejado e o Estoque Planejado Médio e este foi utilizado para o cálculo dos ganhos relacionado ao custo de carregamento. Também por meio do MRP estimou-se a quantidade de lotes produzidos ou recebidos (compras), sendo este utilizado para o cálculo dos ganhos relacionados ao custo de ordem.
+
+
+Os cálculos descritos a seguir devem ser feitos mês a mês (i) para todo o Horizonte da Demanda (n) parametrizado:
+
+
+Demanda (i):
+Trazer a Demanda mês a mês (i) para horizonte escolhido (n), para Tipo de Material = FERT: buscar a informação da /SAPAPO/RRP4, para os demais utilizar Farol de Estoques - V300
+
+
+* Lote Cadastrado:
+
+
+Custo de Estoque Lote Cadastrado
+Média do custo de estoque planejado cadastrado no horizonte n:
+
+
+
+Para i = 1
+Estoque Plan Cadastrado (i): Estoque Inicial - Demanda(i) < ES, fazer valor absoluto(((Estoque Inicial - Demanda(i)) - ES)/ Lote Cadastrado) * Lote Cadastrado + Estoque Inicial - Demanda(i), senão Estoque Inicial - Demanda(i)
+
+
+Para i = 2,3,4....
+Estoque Plan Cadastrado (i): Estoque Plan Cadastrado (i) - Demanda(i) < ES, fazer valor absoluto(((Estoque Plan Cadastrado (i-1) - Demanda(i)) - ES)/ Lote Cadastrado) * Lote Cadastrado + Estoque Plan Cadastrado (i-1) - Demanda(i), senão Estoque Plan Cadastrado (i-1) - Demanda(i)
+
+
+Estoque Plan Cadastrado médio (i): valor absoluto(Estoque Plan Cadastrado (i+1) - Estoque Plan Cadastrado (i))/2 + mínimo entre Estoque Plan Cadastrado (i) e Estoque Plan Cadastrado (i+1)
+
+
+Quantidade de Lotes Cadastrados produzidos:
+i = 1
+Qtd Lotes Cadastrado (i): Se Estoque Inicial - Demanda(i) < ES, fazer valor absoluto(((Estoque Inicial - Demanda(i)) - ES)/ Lote Cadastrado), senão 0
+Para i = 2,3,4....
+Qtd Lotes Cadastrado (i): Se Estoque Plan Cadastrado (i) - Demanda(i) < ES, fazer valor absoluto(((Estoque Plan Cadastrado (i-1) - Demanda(i)) - ES)/ Lote Cadastrado), senão 0
+
+
+* Lote EOQ:
+
+
+Custo de Estoque Lote EOQ
+Média do custo de estoque planejado EOQ no horizonte n:
+
+
+
+
+
+Para i = 1
+Estoque Plan EOQ (i): Estoque Inicial - Demanda(i) < ES, fazer valor absoluto(((Estoque Inicial - Demanda(i)) - ES)/ EOQ (Q*)) * EOQ (Q*) + Estoque Inicial - Demanda(i), senão Estoque Inicial - Demanda(i)
+
+
+Para i = 2,3,4....
+Estoque Plan EOQ (i): Estoque Plan EOQ (i) - Demanda(i) < ES, fazer valor absoluto(((Estoque Plan EOQ (i-1) - Demanda(i)) - ES)/ EOQ (Q*)) * EOQ (Q*) + Estoque Plan EOQ (i-1) - Demanda(i), senão Estoque Plan EOQ (i-1) - Demanda(i)
+
+
+Estoque Plan EOQ médio (i): valor absoluto(Estoque Plan EOQ (i+1) - Estoque Plan EOQ (i))/2 + mínimo entre Estoque Plan EOQ (i) e Estoque Plan EOQ (i+1)
+Custo de Estoque EOQ: Média do Estoque Plan EOQ médio no período * Custo do Item
+
+
+Quantidade de Lotes EOQs produzidos:
+i = 1
+Qtd Lotes EOQ (i): Se Estoque Inicial - Demanda(i) < ES, fazer valor absoluto(((Estoque Inicial - Demanda(i)) - ES)/ EOQ (Q*)), senão 0
+Para i = 2,3,4....
+Qtd Lotes EOQ (i): Se Estoque Plan EOQ (i) - Demanda(i) < ES, fazer valor absoluto(((Estoque Plan EOQ (i-1) - Demanda(i)) - ES)/ EOQ (Q*)), senão 0
+
+
+* Ganhos EOQ sobre Lote Cadastrado:
+
+
+Ganhos EOQ / Cadastrado
+Se Planejador ≠ J01, fazer: Ganhos de Oportunidade EOQ sobre Lote Cadastrado + Ganhos de Seguro EOQ sobre Lote Cadastrado + Ganhos de Armazenagem EOQ sobre Lote Cadastrado + Ganhos de Setup EOQ sobre Lote Cadastrado + Ganhos de Transformação EOQ sobre Lote Cadastrado + Ganhos Qualidade EOQ sobre Lote Cadastrado, senão 0
+
+
+Ganhos de Oportunidade EOQ sobre Lote Cadastrado
+
+
+
+Ganhos de Seguro EOQ sobre Lote Cadastrado
+
+
+
+Ganhos de Armazenagem EOQ sobre Lote Cadastrado
+
+
+
+Ganhos de Setup EOQ sobre Lote Cadastrado
+Se Tipo de Suprimento é X ou E:
+
+Senão 0
+
+
+Ganhos de Transformação EOQ sobre Lote Cadastrado
+Se Tipo de Suprimento é X ou E:
+
+Senão 0
+
+
+Ganhos Qualidade EOQ sobre Lote Cadastrado
+
+
+
+Qtd de Análises de Qualidade EOQ/Lote Cadastrado
+Ganhos Qualidade EOQ sobre Lote Cadastrado/(n*Custo do Item)
+
+
+Média de Posições Palete Ganhas EOQ / Lote Cadastrado
+
+
+
+Ganho Quantidade de ordem EOQ / Lote Cadastrado
+
+
+
+* Lote Praticado: 
+
+
+Custo de Estoque Lote Praticado
+Média do custo de estoque planejado praticado no horizonte n:
+
+
+
+Para i = 1
+Estoque Plan Praticado (i): Estoque Inicial - Demanda(i) < ES, fazer valor absoluto(((Estoque Inicial - Demanda(i)) - ES)/ Lote Praticado) * Lote Praticado + Estoque Inicial - Demanda(i), senão Estoque Inicial - Demanda(i)
+
+
+Para i = 2,3,4....
+Estoque Plan Praticado (i): Estoque Plan Praticado (i) - Demanda(i) < ES, fazer valor absoluto(((Estoque Plan Praticado (i-1) - Demanda(i)) - ES)/ Lote Praticado) * Lote Praticado + Estoque Plan Praticado (i-1) - Demanda(i), senão Estoque Plan Praticado (i-1) - Demanda(i)
+
+
+Estoque Plan Praticado médio (i): valor absoluto(Estoque Plan Praticado (i+1) - Estoque Plan Praticado (i))/2 + mínimo entre Estoque Plan Praticado (i) e Estoque Plan Praticado (i+1)
+
+
+Quantidade de Lotes Praticados produzidos:
+i = 1
+Qtd Lotes Praticado (i): Se Estoque Inicial - Demanda(i) < ES, fazer valor absoluto(((Estoque Inicial - Demanda(i)) - ES)/ Lote Praticado), senão 0
+Para i = 2,3,4....
+Qtd Lotes Praticado (i): Se Estoque Plan Praticado (i) - Demanda(i) < ES, fazer valor absoluto(((Estoque Plan Praticado (i-1) - Demanda(i)) - ES)/ Lote Praticado), senão 0
+
+
+* Ganhos EOQ sobre Lote Praticado: 
+
+
+Ganhos EOQ / Praticado
+Se Planejador ≠ J01, fazer: Ganhos de Oportunidade EOQ sobre Lote Praticado + Ganhos de Seguro EOQ sobre Lote Praticado + Ganhos de Armazenagem EOQ sobre Lote Praticado + Ganhos de Setup EOQ sobre Lote Praticado + Ganhos de Transformação EOQ sobre Lote Praticado + Ganhos Qualidade EOQ sobre Lote Praticado, senão 0
+
+
+Ganhos de Oportunidade EOQ sobre Lote Praticado
+
+
+
+Ganhos de Seguro EOQ sobre Lote Praticado
+
+
+
+Ganhos de Armazenagem EOQ sobre Lote Praticado
+
+
+
+Ganhos de Setup EOQ sobre Lote Praticado
+Se Tipo de Suprimento é X ou E:
+
+Senão 0
+
+
+Ganhos de Transformação EOQ sobre Lote Praticado
+Se Tipo de Suprimento é X ou E:
+
+Senão 0
+
+
+Ganhos Qualidade EOQ sobre Lote Praticado
+
+
+
+Qtd de Análises de Qualidade EOQ/Lote Praticado
+Ganhos Qualidade EOQ sobre Lote Praticado/(n*Custo do Item)
+
+
+Média de Posições Palete Ganhas EOQ / Lote Praticado
+
+
+
+Ganho Quantidade de ordem EOQ / Lote Praticado
+
+
+
+* Lote Restrito
+
+
+Custo de Estoque Lote Restrito
+Média do custo de estoque planejado restrito no horizonte n:
+
+
+
+Para i = 1
+Estoque Plan Restrito (i): Estoque Inicial - Demanda(i) < ES, fazer valor absoluto(((Estoque Inicial - Demanda(i)) - ES)/ Lote Restrito) * Lote Restrito + Estoque Inicial - Demanda(i), senão Estoque Inicial - Demanda(i)
+
+
+Para i = 2,3,4....
+Estoque Plan Restrito (i): Estoque Plan Restrito (i) - Demanda(i) < ES, fazer valor absoluto(((Estoque Plan Restrito (i-1) - Demanda(i)) - ES)/ Lote Restrito) * Lote Restrito + Estoque Plan Restrito (i-1) - Demanda(i), senão Estoque Plan Restrito (i-1) - Demanda(i)
+
+
+Estoque Plan Restrito médio (i): valor absoluto(Estoque Plan Restrito (i+1) - Estoque Plan Restrito (i))/2 + mínimo entre Estoque Plan Restrito (i) e Estoque Plan Restrito (i+1)
+
+
+Quantidade de Lotes Restritos produzidos:
+i = 1
+Qtd Lotes Restrito (i): Se Estoque Inicial - Demanda(i) < ES, fazer valor absoluto(((Estoque Inicial - Demanda(i)) - ES)/ Lote Restrito), senão 0
+Para i = 2,3,4....
+Qtd Lotes Restrito (i): Se Estoque Plan Restrito (i) - Demanda(i) < ES, fazer valor absoluto(((Estoque Plan Restrito (i-1) - Demanda(i)) - ES)/ Lote Restrito), senão 0
+
+
+* Ganhos Lote Restrito sobre Lote Cadastrado:
+
+
+Ganhos Restrito / Cadastrado
+Se Planejador ≠ J01, fazer: Ganhos de Oportunidade Restrito sobre Lote Cadastrado + Ganhos de Seguro Restrito sobre Lote Cadastrado + Ganhos de Armazenagem Restrito sobre Lote Cadastrado + Ganhos de Setup Restrito sobre Lote Cadastrado + Ganhos de Transformação Restrito sobre Lote Cadastrado + Ganhos Qualidade Restrito sobre Lote Cadastrado, senão 0
+
+
+Ganhos de Oportunidade Restrito sobre Lote Cadastrado
+
+
+
+Ganhos de Seguro Restrito sobre Lote Cadastrado
+
+
+
+Ganhos de Armazenagem Restrito sobre Lote Cadastrado
+
+
+
+Ganhos de Setup Restrito sobre Lote Cadastrado
+Se Tipo de Suprimento é X ou E:
+
+Senão 0
+
+
+Ganhos de Transformação Restrito sobre Lote Cadastrado
+Se Tipo de Suprimento é X ou E:
+
+Senão 0
+
+
+Ganhos Qualidade Restrito sobre Lote Cadastrado
+
+
+
+Qtd de Análises de Qualidade Restrito /Lote Cadastrado
+Ganhos Qualidade Restrito sobre Lote Cadastrado/(n*Custo do Item)
+
+
+Média de Posições Palete Ganhas Restrito / Lote Cadastrado
+
+
+
+Ganho Quantidade de ordem Restrito / Lote Cadastrado
+
+
+
+* Ganhos Lote Restrito sobre Lote Praticado: 
+
+
+Ganhos Restrito / Praticado
+Se Planejador ≠ J01, fazer: Ganhos de Oportunidade Restrito sobre Lote Praticado + Ganhos de Seguro Restrito sobre Lote Praticado + Ganhos de Armazenagem Restrito sobre Lote Praticado + Ganhos de Setup Restrito sobre Lote Praticado + Ganhos de Transformação Restrito sobre Lote Praticado + Ganhos Qualidade Restrito sobre Lote Praticado, senão 0
+
+
+Ganhos de Oportunidade Restrito sobre Lote Praticado
+
+
+
+Ganhos de Seguro Restrito sobre Lote Praticado
+
+
+
+Ganhos de Armazenagem Restrito sobre Lote Praticado
+
+
+
+Ganhos de Setup Restrito sobre Lote Praticado
+Se Tipo de Suprimento é X ou E:
+
+Senão 0
+
+
+Ganhos de Transformação Restrito sobre Lote Praticado
+Se Tipo de Suprimento é X ou E:
+
+Senão 0
+
+
+Ganhos Qualidade Restrito sobre Lote Praticado
+
+
+
+Qtd de Análises de Qualidade Restrito /Lote Praticado
+Ganhos Qualidade Restrito sobre Lote Praticado/(n*Custo do Item)
+
+
+Média de Posições Palete Ganhas Restrito / Lote Praticado
+
+
+
+Ganho Quantidade de ordem Restrito / Lote Praticado
+
+
+
+
+
+7. Alertas
+
+
+* Farol de Alertas para EOQ (Q*):
+
+
+Quando EOQ (Q*) <> 0, fazer:
+
+
+EOQ >> Lote Cadastrado
+Se EOQ (Q*) > Lote Cadastrado e EOQ (Q*) < Lote Cadastrado*(1+Alerta Amarelo): farol verde; se Lote Cadastrado*(1+Alerta Amarelo) < EOQ (Q*) < Lote Cadastrado*(1+Alerta Vermelho): farol amarelo, se EOQ (Q*) > Lote Cadastrado*(1+Alerta Vermelho): farol vermelho, senão deixar vazio
+
+
+EOQ >> Lote Praticado
+Se EOQ (Q*) > Lote Praticado e EOQ (Q*) < Lote Praticado*(1+Alerta Amarelo): farol verde; se Lote Praticado*(1+Alerta Amarelo) < EOQ (Q*) < Lote Praticado*(1+Alerta Vermelho): farol amarelo, se EOQ (Q*) > Lote Praticado*(1+Alerta Vermelho): farol vermelho, senão deixar vazio
+
+
+EOQ << Lote Cadastrado
+Se EOQ (Q*) < Lote Cadastrado e EOQ (Q*) > Lote Cadastrado*(1-Alerta Amarelo): farol verde; se Lote Cadastrado*(1-Alerta Vermelho) < EOQ (Q*) < Lote Cadastrado*(1-Alerta Amarelo): farol amarelo, se EOQ (Q*) < Lote Cadastrado*(1-Alerta Vermelho): farol vermelho, senão deixar vazio
+
+
+EOQ << Lote Praticado
+Se EOQ (Q*) < Lote Praticado e EOQ (Q*) > Lote Praticado*(1-Alerta Amarelo): farol verde; se Lote Praticado*(1-Alerta Vermelho) < EOQ (Q*) < Lote Praticado*(1-Alerta Amarelo): farol amarelo, se EOQ (Q*) < Lote Praticado*(1-Alerta Vermelho): farol vermelho, senão deixar vazio
+
+
+Para todos os casos em que o EOQ (Q*) = 0, deixar vazio
+
+
+* Farol de Alertas para Lote Restrito:
+
+
+Quando LOTE RESTRITO <> 0, fazer:
+
+
+EOQ >> Lote Cadastrado
+Se LOTE RESTRITO > Lote Cadastrado e LOTE RESTRITO < Lote Cadastrado*(1+Alerta Amarelo): farol verde; se Lote Cadastrado*(1+Alerta Amarelo) < LOTE RESTRITO < Lote Cadastrado*(1+Alerta Vermelho): farol amarelo, se LOTE RESTRITO > Lote Cadastrado*(1+Alerta Vermelho): farol vermelho, senão deixar vazio
+
+
+EOQ >> Lote Praticado
+Se LOTE RESTRITO > Lote Praticado e LOTE RESTRITO < Lote Praticado*(1+Alerta Amarelo): farol verde; se Lote Praticado*(1+Alerta Amarelo) < LOTE RESTRITO < Lote Praticado*(1+Alerta Vermelho): farol amarelo, se LOTE RESTRITO > Lote Praticado*(1+Alerta Vermelho): farol vermelho, senão deixar vazio
+
+
+EOQ << Lote Cadastrado
+Se LOTE RESTRITO < Lote Cadastrado e LOTE RESTRITO > Lote Cadastrado*(1-Alerta Amarelo): farol verde; se Lote Cadastrado*(1-Alerta Vermelho) < LOTE RESTRITO < Lote Cadastrado*(1-Alerta Amarelo): farol amarelo, se LOTE RESTRITO < Lote Cadastrado*(1-Alerta Vermelho): farol vermelho, senão deixar vazio
+
+
+EOQ << Lote Praticado
+Se LOTE RESTRITO < Lote Praticado e LOTE RESTRITO > Lote Praticado*(1-Alerta Amarelo): farol verde; se Lote Praticado*(1-Alerta Vermelho) < LOTE RESTRITO < Lote Praticado*(1-Alerta Amarelo): farol amarelo, se LOTE RESTRITO < Lote Praticado*(1-Alerta Vermelho): farol vermelho, senão deixar vazio
+
+
+Para todos os casos em que o LOTE RESTRITO = 0, deixar vazio
+
+
+Alerta Shelf Life
+Se qualquer Lote: Cadastrado, Praticado, EOQ, Restrito, Lote Mínimo de Compras, Lote Mínimo de Compras, Lote Mínimo de Produção, Lote Máximo de Produção for maior que Lote Shelf Life, indicar qual/quais lote(s) estão com cobertura maior, senão deixar vazio
+
+
+
+
+Formato:
+  
+
+
+
+8. Filtros para Análise
+
+
+Conjunto de filtros que visa facilitar a análise para alteração de lote
+
+
+Detalhamento EOQ sobre Cadastrado
+
+
+Se Alerta Shelf Life ≠ vazio, exibir mensagem: “Shelf Life”, se Ganhos EOQ / Cadastrado for menor ou igual a zero, exibir mensagem: “Sem Alteração”, EOQ >> Lote Cadastrado e EOQ << Lote Cadastrado igual a farol verde, exibir mensagem “Lote Próximo do Ideal”, se Produção/Compras = “Produção” e EOQ < Lote Restrito, exibir mensagem: “Engenharia Verificar Roteiro Alternativo - Diminuir”, se Produção/Compras = “Produção” e EOQ > Lote Restrito, exibir mensagem: “Engenharia Verificar Roteiro Alternativo - Aumentar”, se Produção/Compras = “Produção” e EOQ < Lote Cadastrado, exibir mensagem: “S&OP Alterar Lote - Diminuir”, se Produção/Compras = “Produção” e EOQ > Lote Cadastrado, exibir mensagem: “S&OP Alterar Lote - Aumentar”, se Produção/Compras = “Compras” e EOQ < Lote Cadastrado, exibir mensagem: “Suprimentos Negociar Lote - Diminuir” , se Produção/Compras = “Compras” e EOQ > Lote Cadastrado, exibir mensagem: “Suprimentos Negociar Lote - Aumentar”, senão exibir mensagem “Sem Alteração”
+
+
+Detalhamento Lote Restrito sobre Cadastrado
+
+
+Se Alerta Shelf Life ≠ vazio, exibir mensagem: “Shelf Life”, se Ganhos Lote Restrito / Cadastrado for menor ou igual a zero, exibir mensagem: “Sem Alteração”, Lote Restrito >> Lote Cadastrado e Lote Restrito << Lote Cadastrado igual a farol verde, exibir mensagem “Lote Próximo do Ideal”, se Produção/Compras = “Produção” e EOQ < Lote Restrito, exibir mensagem: “Engenharia Verificar Roteiro Alternativo - Diminuir”, se Produção/Compras = “Produção” e EOQ > Lote Restrito, exibir mensagem: “Engenharia Verificar Roteiro Alternativo - Aumentar”, se Produção/Compras = “Produção” e EOQ < Lote Cadastrado, exibir mensagem: “S&OP Alterar Lote - Diminuir”, se Produção/Compras = “Produção” e EOQ > Lote Cadastrado, exibir mensagem: “S&OP Alterar Lote - Aumentar”, se Produção/Compras = “Compras” e Lote Restrito < Lote Cadastrado, exibir mensagem: “Suprimentos Negociar Lote - Diminuir” , se Produção/Compras = “Compras” e Lote Restrito > Lote Cadastrado, exibir mensagem: “Suprimentos Negociar Lote - Aumentar”, senão exibir mensagem “Sem Alteração”
+
+
+9. Indicador de aderência
+
+
+Os indicadores de aderência devem ser gravados como histórico 
+
+
+Desvio Lote Cadastrado x Lote Praticado
+Se Lote Praticado> 0, fazer Lote Cadastrado/ Lote Praticado -1, senão deixar vazio
+
+
+Desvio Lote Praticado x Lote Cadastrado
+Se Lote Cadastrado > 0, fazer Lote Praticado/ Lote Cadastrado-1, senão deixar vazio
+
+
+Desvio LC/LP acima do Limite
+Se Desvio Lote Cadastrado x Lote Praticado > Limite desvio Praticado x Realizado ou Desvio Lote Praticado x Lote Cadastrado > Limite desvio Praticado x Realizado, escrever “Sim”, senão “Não”
+
+
+Quantidade Ordens seguindo Cadastro
+Quantidade de ordens no lote cadastrado/Quantidade total de Ordens:
+
+
+Quantidade de ordens no lote cadastrado:
+Para “Compras”: Contar o número de recebimentos no período de um mês para cada SKU em que a quantidade do recebimento é até 10% maior ou menor que o Lote Cadastrado
+Utilizar tabela EEKO do ECC
+Para “Produção”: Contar o número de ordens de produção no período de um mês para cada SKU em que a quantidade do recebimento é até 10% maior ou menor que o Lote Cadastrado Utilizar transação AFPO do ECC
+
+
+Quantidade total de Ordens:
+Para “Compras”: Contar o número de recebimentos no período de um mês para cada SKU. Utilizar tabela EEKO do ECC
+Para “Produção”: Contar o número de ordens de produção no período de um mês para cada SKU. Utilizar transação AFPO do ECC
+
+
+Quantidade Ordens Acima do Cadastro
+Quantidade de ordens abaixo do lote cadastrado/Quantidade total de Ordens:
+
+
+Quantidade de ordens abaixo do lote cadastrado:
+Para “Compras”: Contar o número de recebimentos no período de um mês para cada SKU em que a quantidade do recebimento é menor que 0,9*Lote Cadastrado
+Utilizar tabela EEKO do ECC
+Para “Produção”: Contar o número de ordens de produção no período de um mês para cada SKU em que a quantidade do recebimento é menor que 0,9*Lote Cadastrado 
+Utilizar transação AFPO do ECC
+
+
+Quantidade Ordens Acima do Cadastro
+Quantidade de ordens acima do lote cadastrado/Quantidade total de Ordens:
+
+
+Quantidade de ordens acima do lote cadastrado:
+Para “Compras”: Contar o número de recebimentos no período de um mês para cada SKU em que a quantidade do recebimento é maior que 1,1*Lote Cadastrado
+Utilizar tabela EEKO do ECC
+Para “Produção”: Contar o número de ordens de produção no período de um mês para cada SKU em que a quantidade do recebimento é maior que 1,1*Lote Cadastrado 
+Utilizar transação AFPO do ECC
+
+
+	
+
+
+
+1. Dados Adicionais
+	Os dados  listados abaixo, não serão utilizados para fazer nenhum cálculo, eles auxiliarão as restrições de lotes de compras, serão eles:
+* Volume total do contrato
+* Restrição do fornecedor
+* Máximo que o fornecedor entrega no mês
+
+
+	
+
+2. Legal ou Compliance ? (marque com um X)
+	(    ) Requisito/Demanda Legal
+	(    ) Compliance (Atendimento a Padrões do Grupo)
+	(    ) Não
+	
+
+3. Estimativa de Valor de Benefício Esperado
+	Ganhos de Estoque:
+	Ganhos de oportunidade, seguro, setup e qualidade:
+	Previsão de ganho em tempo em dias de trabalho: redução de 3 meses para 1 mês
+	
+
+4. Benefício Qualitativo Esperado
+	Mitigação/Redução de Riscos – Atualmente os dados são levantados e manipulados de forma muito manual, sujeito a erros. O projeto irá reduzir estes riscos.
+	Aumento da maturidade do processo de revisão de lotes
+	Melhoria da qualidade de estoque (minimização de perdas devido ao shelf life)
+	
+
+5. Impacto(s) se demanda não for Implementada
+	
+
+	
+
+6. Classificação GUT (preencha com os valores conforme abaixo)
+	(   ) Gravidade da Situação: Alta = 3; Média = 2; Baixa = 1
+	(   ) Urgência: Alta = 3; Média = 2; Baixa = 1
+	(   ) Tendência de Piora: Alta = 3; Média = 2; Baixa = 1 
+	(   ) Resultado GUT: soma dos 3 itens acima, dividida por 3
+	
+
+7. Riscos e/ou Pontos de Atenção
+	
+
+ 
+	
+
+8. Data de Implementação Desejada
+	
+
+	
+
+9. Definições e Conceitos sobre Termos Usados Neste Documento
+	
+
+	
+
+
+
+Responsáveis pelo Documento 
+	
+
+	Papel
+	Nome
+	Data
+	Elaborador (Solicitante)
+	
+
+	
+
+	Condensador (Key User)
+	
+
+	
+
+	Aprovador (Gestor)
+	
+
+	
+
+	
+
+
+
+
+
+Controle de Versão
+	
+
+	Versão
+	Conteúdo
+	Data
